@@ -41,7 +41,7 @@ BUILDPACK_VERSION=v28
 export PATH=$PATH:$ROOT_DIR/vendor/pip-pop
 
 # Support Anvil Build_IDs
-[ ! "$SLUG_ID" ] && SLUG_ID="defaultslug"
+[ ! "$SLUG_ID" ] && SLUG_ID="mitchellrjfoo"
 [ ! "$REQUEST_ID" ] && REQUEST_ID=$SLUG_ID
 [ ! "$STACK" ] && STACK=$DEFAULT_PYTHON_STACK
 
@@ -162,6 +162,23 @@ source $BIN_DIR/steps/mercurial
 # Pylibmc support.
 source $BIN_DIR/steps/pylibmc
 
+# GeoDjango support. (GEOS, Proj.4, GDAL)
+# See [`bin/steps/geos`](geos.html).
+# See [`bin/steps/proj4`](proj4.html).
+# See [`bin/steps/gdal`](gdal.html).
+bpwatch start geodjango_install
+  source $BIN_DIR/steps/geos
+  source $BIN_DIR/steps/proj4
+  source $BIN_DIR/steps/gdal
+bpwatch stop geodjango_install
+
+# Install Mercurial if it appears to be required.
+if (grep -Fiq "hg+" requirements.txt) then
+  bpwatch start mercurial_install
+    /app/.heroku/python/bin/pip install  mercurial | cleanup | indent
+  bpwatch stop mercurial_install
+fi
+
 # Libffi support.
 source $BIN_DIR/steps/cryptography
 
@@ -181,6 +198,9 @@ set-env PYTHONUNBUFFERED true
 set-env PYTHONHOME /app/.heroku/python
 set-env LIBRARY_PATH /app/.heroku/vendor/lib:/app/.heroku/python/lib
 set-env LD_LIBRARY_PATH '/app/.heroku/vendor/lib:/app/.heroku/python/lib:$LD_LIBRARY_PATH'
+set-env GEOS_LIBRARY_PATH $GEOS_LIBRARY_PATH
+set-env PROJ4_LIBRARY_PATH $PROJ4_LIBRARY_PATH
+set-env GDAL_LIBRARY_PATH $GDAL_LIBRARY_PATH
 set-default-env LANG en_US.UTF-8
 set-default-env PYTHONHASHSEED random
 set-default-env PYTHONPATH /app/
